@@ -1,0 +1,62 @@
+#sudo chown -R <user name to be changed> <location>
+#make executable shell script file
+	-- chmod +x <folder/shell script file>
+#list available images
+	docker images
+#remove a image
+   #docker rm -f <image id>
+#stop the images
+docker stop <container ids with space>
+
+#docker ps -a  -- to list the running containers
+#docker inspect <container id>
+
+#docker stop <container id>
+#docker logs -f <container id>
+
+#docker exec lets you run command on an already running container
+#docker exec -it couchbase curl -f http://localhost:8091/pools
+
+#list down the network
+docker network ls
+docker network inspect <network name>
+#create a network
+docker network create <name>
+
+# remove all dangling images
+docker image prune -a
+# remove all dangling images
+docker rmi $(docker images -f "dangling=true" -q)
+# remove any stopped containers and all unused images (not just dangling images)
+docker system prune -a
+
+
+# Start the consul server
+docker-compose up --build -d consul
+#docker-compose up --build --force-recreate -d <docker compose service name>
+docker-compose up --build --force-recreate -d consul && docker-compose logs -f
+#docker-compose <service name> down
+# command to only create container and not to start
+docker-compose create --build --force-recreate -d <service id>
+docker-compose up -d --no-start consul
+docker-compose up --build --force-recreate --no-start consul
+# command to start a container without re-creating
+docker-compose up --no-recreate -d consul 
+# create, up and follow the logs
+docker-compose up --build --force-recreate -d consul && docker-compose logs -f
+
+# Start the couchbase server
+docker-compose up --build --force-recreate -d couchbase
+# Start the couchbase server and follow the respective container logs
+docker-compose up --build --force-recreate -d couchbase && docker-compose logs -f
+
+# Start the spring-boot user module server
+docker-compose up --build --force-recreate -d spring-boot-usermodule
+# Start the spring-boot user module server and follow the respective container logs
+docker-compose up --build --force-recreate -d spring-boot-usermodule && docker-compose logs -f
+
+# bring down all service containers
+docker-compose down 
+
+
+

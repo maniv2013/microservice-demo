@@ -1,0 +1,85 @@
+version: '3.8'
+
+services:
+    nginx:
+        image: nginx:latest
+        build: ./nginx
+        container_name: nginx
+        links:
+          - consul
+        ports:
+          - "80:80"
+          - "8080:8080"
+        networks:
+            - consul-net
+        volumes:
+          #      templates
+          - "./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro" #Read-only nginx configuration
+          #      config
+          #- "./nginx-setup/conf:/etc/consul-template/conf"
+        depends_on:
+            - consul
+    couchbase:
+        image: couchbase-custom
+        build: ./couchbase
+        ports:
+            - "8091:8091" # Web Console
+            - "8092:8092" # Couchbase API
+            - "11210:11210" # Couchbase Bucket Port
+        networks:
+            - consul-net
+        volumes:
+          - ./couchbase/configure.sh:/configure.sh
+        environment:
+            - COUCHBASE_HOST=couchbase
+            - COUCHBASE_PORT=8091  
+            - COUCHBASE_ADMINISTRATOR_USERNAME=Administrator
+            - COUCHBASE_ADMINISTRATOR_PASSWORD=password
+            - COUCHBASE_BUCKET=homelab
+            - COUCHBASE_BUCKET_PASSWORD=Administrator
+            - COUCHBASE_RBAC_USERNAME=admin
+            - COUCHBASE_RBAC_PASSWORD=password
+            - COUCHBASE_RBAC_NAME=admin
+            - COUCHBASE_RAM_SIZE=2048
+            - COUCHBASE_INDEX_RAM_SIZE=512
+            - CONSUL_HTTP_ADDR=consul:8500
+        command: bash -c "./configure.sh"
+        depends_on:
+            - consul
+
+    consul:
+        image: consul:1.15
+        command: "agent -dev -client=0.0.0.0 -server -bootstrap -advertise 127.0.0.1"
+        hostname: consul
+        ports:
+            - "8500:8500"
+            - "8600:8600/udp"
+        networks:
+            - consul-net
+        volumes:
+            - consul-data:/consul/data
+
+    spring-boot-usermodule:
+        build:
+            context: .
+            dockerfile: ./user-module/Dockerfile
+        image: spring-boot-usermodule-img
+        ports:
+            - 9090:9090
+        environment:
+            - COUCHBASE_HOST=couchbase
+            - SPRING_CLOUD_CONSUL_HOST=consul
+            - SPRING_CLOUD_CONSUL_PORT=8500
+        restart: always
+        networks:
+            - consul-net
+        depends_on:
+            - couchbase
+
+
+networks:
+    consul-net:
+      driver: bridge
+
+volumes:
+  consul-data:
